@@ -2,15 +2,12 @@ library(fitHeavyTail)
 library(xts)
 library(quantmod)
 library(igraph)
-library(bipartite)
 library(readr)
 library(spectralGraphTopology)
-library(fingraph)
 library(combinat)
-library(CVXR)
 library(ggplot2)
 library(reshape2)
-library(PerformanceAnalytics)
+library(ktvgraph)
 
 
 set.seed(42)
@@ -19,18 +16,20 @@ set.seed(42)
 pdf(file = "Plots_TVGL_results.pdf")
 
 
-# load SP500 stock prices_test into an xts table
-stock_prices_orig <- readRDS("examples/stocks/sp500-data-2016-2020.rds")
-stock_prices <- stock_prices_orig[1:1001,1:100]
+# number of stocks
+r <- 100 
+
 # number of sectors
 q <- 8
 
 
+# load SP500 stock prices_test into an xts table
+stock_prices_orig <- readRDS("examples/stocks/sp500-data-2016-2020.rds")
+stock_prices <- stock_prices_orig[1:1001,1:r]
+
 winLen <-  200
 Nday <- nrow(stock_prices) 
 
-# number of stocks
-r <- ncol(stock_prices) 
 Nwin <- Nday%/% winLen  
 
 
@@ -54,16 +53,7 @@ colnames(stock_prices)[1:r]
 # compute log-returns
 log_returns <- diff(log(stock_prices), na.pad = FALSE)
 
-market_return <- Ad(getSymbols("^GSPC",
-                           from = index(stock_prices[1]), to = index(stock_prices[nrow(stock_prices)]),
-                           auto.assign = FALSE,
-                           verbose = FALSE
-))
-market_log_returns <- diff(log(market_return), na.pad = FALSE)
 
-# fit an univariate Student-t distribution to the log-returns of the market
-# to obtain an estimate of the degrees of freedom (nu)
-nu <- fit_mvt(market_log_returns, nu = "MLE-diag-resampled")$nu
 
 
 
@@ -104,15 +94,15 @@ balanced_norm_vec <- rep(0,Nwin)
 GINI_vec <- rep(0,Nwin)
 rank_mat <- rep(0,Nwin)
 
-nu <- fit_mvt(scale(log_returns), nu="MLE-diag-resample")$nu
 
 for (i in 1:Nwin){
   data_frame <- log_returns[((i-1)*winLen+1):(i*winLen),]
+  nu <- fit_mvt(data_frame, nu = "MLE-diag-resampled")$nu
   graphs_list[[i]] <- learn_kcomp_heavytail_TV_graph_online(scale(data_frame), k = q, heavy_type = "student",
                                                      nu = nu,
-                                                     sigma_e = 1,
+                                                     sigma_e = exp(10),
                                                      w_lagged = w_lagged,
-                                                     rho = 1,
+                                                     rho = 2,
                                                      d = 1,
                                                      w0 = w0,
                                                      update_eta = TRUE,
@@ -176,30 +166,6 @@ for (i in 1:Nwin){
 
 adjacency <- graphs_list[[Nwin]]$adjacency
 
-
-#-------------------------------------
-# Portfolio design
-
-w_portf_list <- vector("list", Nwin)
-for (j in 1:Nwin){
-
-  data_frame <- log_returns[((j-1)*winLen+1):(j*winLen),]
-  res_Student_t <- fit_mvt(scale(data_frame))
-  mean_vec <- res_Student_t$mu
-  Sigma_cov <- res_Student_t$cov
-  gamma_2 <- 0.1
-  u <- Variable(r)
-  ret <- t(mean_vec) %*% u
-  risk <- quad_form(u, Sigma_cov)
-  smooth <- quad_form(u, graphs_list[[j]]$laplacian)
-  obj <- ret  -gamma_2 * smooth
-  constr <- list(u >= 0, sum(u) == 1)
-  prob <- Problem(Maximize(obj), constr)
-  result <- solve(prob)
-  w_portf <- result$getValue(u)
-  w_portf[w_portf<1e-3] <- 0
-  w_portf_list[[j]]<- t(w_portf)
-}
 
 
 for (j in 1:Nwin) {
@@ -306,163 +272,6 @@ matplot(metrics, type = "b",pch=2,col = 1:4, ylab = "Metrics")
 names <- c("Accuracy", "Purity", "Modularity", "Balancedness")
 legend("bottomleft", inset=0.01, legend=names, col=c(1:4),pch=15:18,
        bg= ("white"), horiz=F)
-
-
-Nwin <- Nwin-1
-Nday <- winLen*Nwin
-prices_test <- stock_prices [(winLen+1):(winLen+Nday+1),1:r]
-returns_test <- (prices_test/lag(prices_test) - 1)[-1]
-
-mine_returns <- matrix(rep(0,4*Nday),4,Nday)
-
-for (i in 1:Nwin) {
- for (j in ((i-1)*winLen+1):((i)*winLen) ) {
-   if (j<=Nday) { 
-     if (i<=1) {k1 <- i}
-     mine_returns[1, j] <-  sum(returns_test[j, ] * w_portf_list[[k1]] )
-     if (i<=2) {k2 <- i}
-     mine_returns[2, j] <-  sum(returns_test[j, ] * w_portf_list[[k2]] )
-     if (i<=3) {k3 <- i}
-     mine_returns[3, j] <-  sum(returns_test[j, ] * w_portf_list[[k3]] )
-     if (i<=4) {k4 <- i}
-     mine_returns[4, j] <-  sum(returns_test[j, ] * w_portf_list[[k4]] )
-     
-   }
- }
-}
-
-
-all_returns <- matrix(rep(0,6*Nday),6,Nday)
-for (i in 1:4) {
-  all_returns[i,] <- cumsum(mine_returns[i,])
-}
-
-EWP_return <- rowSums(returns_test)/r
-all_returns[5,] <- cumsum(EWP_return)
-
-market_return <- market_log_returns[(winLen+1):(winLen+Nday)]
-all_returns[6,] <- cumsum(market_return)
-
-matplot(t(all_returns), type = "l",pch=1,col = 1:6, ylab = "Cum return", xlab= )
-names <- c( "MGSP-1", "MGSP-2", "MGSP-3", "MGSP-4", "EWP", "Market")
-legend("bottomleft", inset=0.01, legend=names, col=c(1:6),pch=15:(15+6-1),
-       bg= ("white"), horiz=F)
-
-
-all_returns <- all_returns + 1
-df <- data.frame(index   = index(market_return),
-                 MGSP_1 = all_returns[1,],
-                 MGSP_2 = all_returns[2,],
-                 MGSP_3 = all_returns[3,],
-                 MGSP_4 = all_returns[4,],
-                 EWP =  all_returns[5,],
-                 Market = all_returns[6,]
-)
-#
-names <- c( "MGSP_1", "MGSP_2", "MGSP_3", "MGSP_4","EWP", "Market")
-
-molten_df <- melt(df, id.vars = "index", measure.vars = names)
-ggplot(molten_df, aes(x = index, y = value, col = variable)) +
-  geom_line() +
-  ggtitle("Portfolio Returns") + labs(colour = "Portfolios") + ylab("Cumm. Return") + xlab("Date")
-
-ggsave("ggplot_portfolios.pdf", width = 10, height = 5)
-
-
-
-
-
-#-----------------------
-# Evaluate the performance of the portfolios
-
-# create empty portfolio matrix
-ret_list <- vector(mode="list", length = Nwin-1)
-
-for (i in 1:(Nwin-1)) {
-  
-}
-rebal_indices <-  winLen*(1:(Nwin)-1) +1
-
-for (i in 1:(Nwin)) {
-  w_MVP_rolling <- returns_test
-  w_MVP_rolling[] <- NA
-  
-  for (j in 1:(Nwin)) {
-    if (j<(i+1)) {k1 <-j}
-    w_MVP_rolling[rebal_indices[j], ] <- w_portf_list[[k1]]
-  }
-  w_MVP_rolling <- na.omit(w_MVP_rolling)
-  tmp <- Return.portfolio(returns_test, weights = w_MVP_rolling, verbose = TRUE, rebalance_on = "days")
-  ret_list[[i]] <- tmp$returns
-}
-
-w_EWP <- rep(1/r,r)
-ret_EWP_static <- xts(returns_test %*% w_EWP, index(returns_test))
-ret_EWP_static <- Return.portfolio(returns_test, weights = w_EWP, rebalance_on = "days")
-
-
-#--------------
-w_MVP_list <- vector("list", Nwin)
-for (j in 1:Nwin){
-  data_stocks <- log_returns[((j-1)*winLen+1):(j*winLen),]
-  res_Student_t <- fit_mvt(scale(data_stocks))
-  mean_vec <- res_Student_t$mu
-  Sigma_cov <- res_Student_t$cov
-  gamma_1 <- 0.1
-  u <- Variable(r)
-  ret <- t(mean_vec) %*% u
-  risk <- quad_form(u, Sigma_cov)
-  smooth <- quad_form(u, graphs_list[[j]]$laplacian)
-  obj <- ret - gamma_1  * risk
-  constr <- list(u >= 0, sum(u) == 1)
-  prob <- Problem(Maximize(obj), constr)
-  result <- solve(prob)
-  w_portf <- result$getValue(u)
-  w_portf[w_portf<1e-3] <- 0
-  w_MVP_list[[j]]<- t(w_portf)
-}
-
-
-# create empty portfolio matrix
-ret_list_MVP <- vector(mode="list", length = Nwin-1)
-rebal_indices <-  winLen*(1:(Nwin)-1) +1
-for (i in 1:(Nwin)) {
-  w_MVP_rolling <- returns_test
-  w_MVP_rolling[] <- NA
-  for (j in 1:(Nwin)) {
-    if (j<(i+1)) {k1 <-j}
-    w_MVP_rolling[rebal_indices[j], ] <- w_MVP_list[[k1]]
-  }
-  w_MVP_rolling <- na.omit(w_MVP_rolling)
-  tmp <- Return.portfolio(returns_test, weights = w_MVP_rolling, verbose = TRUE, rebalance_on = "days")
-  ret_list_MVP[[i]] <- tmp$returns
-}
-
-ret_all <- cbind(ret_list[[1]],
-                 ret_list[[2]],
-                 ret_list[[3]],
-                 ret_list[[4]],
-                 ret_list_MVP[[4]],
-                 ret_EWP_static)
-
-
-colnames(ret_all) <- c("MGSP-1", "MGSP-2", "MGSP-3", "MGSP-4", "MVP Dynamic", "EWP")
-
-{chart.CumReturns(ret_all, main = "Commulative return of portfolios",
-                  geometric = FALSE, wealth.index = TRUE, legend.loc = "topleft", colorset = rich6equal)
-  addEventLines(xts("", index(returns_test[winLen])), srt=90, pos=1, lwd = 2, col = "darkblue")
-  addEventLines(xts("", index(returns_test[2*winLen])), srt=90, pos=1, lwd = 2, col = "darkred")
-  addEventLines(xts("", index(returns_test[3*winLen])), srt=90, pos=1, lwd = 2, col = "darkgreen")
-}
-
-
-{chart.Drawdown(ret_all, main = "Drawdown of portfolios", 
-                legend.loc = "bottomleft", colorset = rich10equal)
-  addEventLines(xts("", index(returns_test[winLen])), srt=90, pos=1, lwd = 2, col = "darkblue")
-  addEventLines(xts("", index(returns_test[2*winLen])), srt=90, pos=1, lwd = 2, col = "darkred")
-  addEventLines(xts("", index(returns_test[3*winLen])), srt=90, pos=1, lwd = 2, col = "darkgreen")
-}
-print(round(t(table.AnnualizedReturns(ret_all)),2))
 
 
 

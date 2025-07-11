@@ -1,9 +1,9 @@
 library(spectralGraphTopology)
 library(assertthat)
 
-#' @title Laplacian matrix of a k-component graph with heavy-tailed data
+#' @title Theta matrix of a k-component graph with heavy-tailed data
 #'
-#' Computes the Laplacian matrix of a graph on the basis of an observed data matrix,
+#' Computes the Theta matrix of a graph on the basis of an observed data matrix,
 #' where we assume the data to be Student-t distributed.
 #'
 #' @param X an T_n x p data matrix, where T_n is the number of observations and p is
@@ -30,7 +30,7 @@ library(assertthat)
 #' @export
 #' @import spectralGraphTopology
 learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
-                                                  sigma_e = 1,
+                                                  sigma_e = exp(0.1),
                                                   k = 1,
                                                   heavy_type = "gaussian",
                                                   nu = NULL,
@@ -91,8 +91,8 @@ learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
     w_lagged <-  rep(w_lagged, p*(p-1)/2)
   }
   
-  # Laplacian-initilization
-  Laplacian <- Lw
+  # Theta-initilization
+  Theta <- Lw
   Phi <- matrix(0, p, p)
   
   
@@ -136,7 +136,7 @@ learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
         for (q in 1:T_n)
           LstarSweighted <- LstarSweighted + LstarSq[[q]]
       }
-      grad <- LstarSweighted/T_n + Lstar(eta * crossprod(t(U)) + Phi - rho * Laplacian) + rho * (LstarLw )
+      grad <- LstarSweighted/T_n + Lstar(eta * crossprod(t(U)) + Phi - rho * Theta) + rho * (LstarLw )
       grad <- grad - mu_vec - rho*(u+a*w_lagged) +  Dstar(z - rho * d) + rho *  DstarDw
       ratio <- 1 / (rho*(4*p-1))
       wi <- (1-rho*ratio)*w - ratio *  grad
@@ -145,7 +145,6 @@ learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
       Lwi <- L(wi)
       Awi <- A(wi)
       
-    
       
     }
 
@@ -169,16 +168,16 @@ learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
     # update U
     U <- eigen(Lwi, symmetric = TRUE)$vectors[, (p - k + 1):p]
     
-    # update Laplacian
+    # update Theta
     eig <- eigen( Lwi + Phi/rho, symmetric = TRUE)
     V <- eig$vectors[,1:(p-k)]
     Gamma_U <- eig$values[1:(p-k)]
-    Laplacian_i <- V %*% diag((Gamma_U + sqrt(Gamma_U^2 + 4/rho)) / 2) %*% t(V)
+    Thetai <- V %*% diag((Gamma_U + sqrt(Gamma_U^2 + 4/rho)) / 2) %*% t(V)
     
     
     
     # update Phi
-    R1 <-  Lwi - Laplacian_i 
+    R1 <-  Lwi - Thetai 
     Phi <- Phi + rho * R1
     
     
@@ -195,17 +194,18 @@ learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
     # compute primal, dual residuals, & lagrangian
     primal_lap_residual <- c(primal_lap_residual, norm(R1, "F"))
     primal_deg_residual <- c(primal_deg_residual, norm(R2, "2"))
-    dual_residual <- c(dual_residual, rho*norm(Lstar(Laplacian - Laplacian_i), "2"))
-    lagrangian <- c(lagrangian, compute_augmented_lagrangian_kcomp_mine(wi, LstarSq, Laplacian_i, U, Phi, z, d, heavy_type, T_n, p, k, rho, eta, nu, w_lagged, u, mu_vec, alpha, beta, a, gamma))
+    dual_residual <- c(dual_residual, rho*norm(Lstar(Theta - Thetai), "2"))
+    lagrangian <- c(lagrangian, compute_augmented_lagrangian_kcomp_mine(wi, LstarSq, Thetai, U, Phi, z, d, heavy_type, T_n, p, k, rho, eta, nu, w_lagged, u, mu_vec, alpha, beta, a, gamma))
+    
     # update rho
     if (update_rho) {
-      # s <- rho * norm(Lstar(Laplacian - Laplacian_i), "2")
+      # s <- rho * norm(Lstar(Theta - Thetai), "2")
       # r <- norm(R1, "F")# + norm(R2, "2")
       # if (r > mu * s)
       #   rho <- rho * tau
       # else if (s > mu * r)
       #   rho <- rho / tau
-      eig_vals <- spectralGraphTopology:::eigval_sym(Laplacian)
+      eig_vals <- spectralGraphTopology:::eigval_sym(Theta)
       n_zero_eigenvalues <- sum(eig_vals < 1e-9)
       if (k < n_zero_eigenvalues)
         rho <- .5 * rho
@@ -244,7 +244,7 @@ learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
     Lw <- Lwi
     Aw <- Awi
     
-    Laplacian <- Laplacian_i
+    Theta <- Thetai
   }
   results <- list(laplacian = L(wi), adjacency = A(wi), weights = wi, theta = Thetai, maxiter = i,
                   convergence = has_converged, eta_seq = eta_seq,
@@ -256,8 +256,8 @@ learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
   return(results)
 }
 
-compute_augmented_lagrangian_kcomp_mine <- function(w, LstarSq, Laplacian, U, Phi, z, d, heavy_type, T_n, p, k, rho, eta, nu, w_lagged, u, mu_vec, alpha, beta, a, gamma ) {
-  eig <- eigen(Laplacian, symmetric = TRUE, only.values = TRUE)$values[1:(p-k)]
+compute_augmented_lagrangian_kcomp_mine <- function(w, LstarSq, Theta, U, Phi, z, d, heavy_type, T_n, p, k, rho, eta, nu, w_lagged, u, mu_vec, alpha, beta, a, gamma ) {
+  eig <- eigen(Theta, symmetric = TRUE, only.values = TRUE)$values[1:(p-k)]
   Lw <- L(w)
   Dw <- diag(Lw)
   u_func <- 0
@@ -269,21 +269,19 @@ compute_augmented_lagrangian_kcomp_mine <- function(w, LstarSq, Laplacian, U, Ph
       u_func <- u_func + sum( w * LstarSq[[q]])
   }
   u_func <- u_func/T_n
-  return(u_func - sum(log(eig)) + sum(z * (Dw - d)) + sum(Phi * (Lw - Laplacian))
-         + .5 * rho * (norm(Dw - d, "2")^2 + norm(Lw - Laplacian, "F")^2) + eta * sum(w * Lstar(crossprod(t(U))))
-         + sum(mu_vec * ( u - w + a*w_lagged )) + .5 * rho * (norm(u - w + a*w_lagged, "2"))^2
+  return(u_func - sum(log(eig))
+         + eta * sum(w * Lstar(crossprod(t(U))))
          + beta* sum(w>0)
          + alpha* sum(abs(u))
          + gamma *sum(a)
-         
-         
+         + sum(z * (Dw - d)) + 0.5 * rho * (norm(Dw - d, "2")^2
+         + sum(mu_vec * ( u - w + a*w_lagged )) + .5 * rho * (norm(u - w + a*w_lagged, "2"))^2
+         + sum(Phi * (Lw - Theta))  + 0.5* rho * norm(Lw - Theta, "F")^2)    
   )
 }
 
 hardThresh <- function(v, thr){
-  
   return( v * (abs(v) > thr) )
-  
 }
 
 

@@ -7,7 +7,6 @@ with Student-t distribution applied to financial data clustering.
 > install.packages(spectralGraphTopology)
 > devtools::install_github("javaheriamirhossein/k-tvgraph")
 ```
-You can also run `.roxygenize.R` for local use.
 
 #### Microsoft Windows
 On MS Windows environments, make sure to install the most recent version of ``Rtools``.

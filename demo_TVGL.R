@@ -115,7 +115,7 @@ for (i in 1:Nwin){
                                                      rho = 1,
                                                      d = 1,
                                                      w0 = w0,
-                                                     update_beta = TRUE,
+                                                     update_eta = TRUE,
                                                      maxiter = 100,
                                                      verbose = TRUE)
 

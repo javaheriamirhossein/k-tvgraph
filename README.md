@@ -12,7 +12,7 @@ with Student-t distribution applied to financial data clustering.
 On MS Windows environments, make sure to install the most recent version of ``Rtools``.
 
 ## Run
-Clone this repository to your local computer. Go to the main directory and run `demo_TVGL.R` for a demo.
+Clone this repository to your local computer. Go to the main directory and run `.roxygenize.R`. Then run `demo_TVGL.R` for a demo.
 
 ## Citation
 Please cite:

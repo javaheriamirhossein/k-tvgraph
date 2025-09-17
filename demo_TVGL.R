@@ -7,7 +7,7 @@ library(spectralGraphTopology)
 library(combinat)
 library(ggplot2)
 library(reshape2)
-# library(ktvgraph)
+library(ktvgraph)
 
 
 set.seed(42)
@@ -253,3 +253,4 @@ legend("bottomleft", inset=0.01, legend=names, col=c(1:4),pch=15:18,
 
 
 dev.off()
+

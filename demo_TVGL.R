@@ -142,92 +142,10 @@ adjacency <- graphs_list[[Nwin]]$adjacency
 
 
 for (j in 1:Nwin) {
-  # adjacency <- graphs_list[[j]]$adjacency
-  # net_Fin <- graph_from_adjacency_matrix(adjacency, mode = "undirected", weighted = TRUE)
- 
-  net_result <- plot_graph(graphs_list[[j]]$laplacian, stock_sectors_index, colnames(stock_prices))
 
+  net_result <- plot_graph(graphs_list[[j]]$laplacian, stock_sectors_index, colnames(stock_prices))
   metric <- net_result$metric
-  
-  
-#   # where do our predictions differ from GICS?
-#   metric <- evaluate_clustering(net_Fin, stock_sectors_index, r, q)
-#   
-#   
-#   labels_pred_adj <-  metric$labels_pred_adj
-# 
-# 
-#   
-#   colors <- c("#55efc4", "#ff7675", "#0984e3", "#a29bfe", "#B33771", "#48dbfb", "#FDA7DF", "#C4E538")
-# 
-#   plot_graph(graphs_list[[1]]$laplacian, stock_sectors_index)
-# 
-# 
-#   # ground truth coloring
-#   V(net_Fin)$color <- c(colors[stock_sectors_index])
-#   V(net_Fin)$type <- c(rep(FALSE, r))
-#   V(net_Fin)$cluster <- c(stock_sectors_index)
-#   E(net_Fin)$color <- apply(
-#     as.data.frame(get.edgelist(net_Fin)), 1,
-#     function(x) {
-#       ifelse(V(net_Fin)$cluster[x[1]] == V(net_Fin)$cluster[x[2]],
-#              colors[V(net_Fin)$cluster[x[1]]], "grey"
-#       )
-#     }
-#   )
-# 
-#   mask <- labels_pred_adj != stock_sectors_index
-#   node_labels <- colnames(stock_prices)[1:r]
-#   node_labels[!mask] <- NA
-#   label_colors <- rep("black",r)
-# 
-# 
-#   # plot network
-#   plot(net_Fin,
-#        vertex.size = c(rep(4, r)),
-#        vertex.label = c(node_labels),
-#        vertex.label.color = label_colors,
-#        vertex.label.cex = 0.8, vertex.label.dist = 0.5,
-#        vertex.frame.color = c(colors[stock_sectors_index]),
-#        layout = layout_nicely(net_Fin),
-#        vertex.label.family = "Helvetica", vertex.label.color = "black",
-#        vertex.shape = c(rep("circle", r)),
-#        edge.width = 3 * E(net_Fin)$weight
-#   )
-# 
-# 
-#   # implied clusters
-#   stock_sectors_index_res <- stock_sectors_index
-#   stock_sectors_index <- igraph::components(net_Fin)$membership
-#   V(net_Fin)$color <- c(colors[stock_sectors_index])
-#   V(net_Fin)$type <- c(rep(FALSE, r))
-#   V(net_Fin)$cluster <- c(stock_sectors_index)
-#   E(net_Fin)$color <- apply(
-#     as.data.frame(get.edgelist(net_Fin)), 1,
-#     function(x) {
-#       ifelse(V(net_Fin)$cluster[x[1]] == V(net_Fin)$cluster[x[2]],
-#              colors[V(net_Fin)$cluster[x[1]]], "grey"
-#       )
-#     }
-#   )
-# 
-# 
-#   node_labels <- colnames(stock_prices)[1:r]
-#   # plot network
-#   plot(net_Fin,
-#        vertex.size = c(rep(4, r)),
-#        vertex.label = c(node_labels),
-#        vertex.label.cex = 0.8, vertex.label.dist = 0.5,
-#        vertex.frame.color = c(colors[stock_sectors_index]),
-#        layout = layout_nicely(net_Fin),
-#        vertex.label.family = "Helvetica", vertex.label.color = "black",
-#        vertex.shape = c(rep("circle", r)),
-#        edge.width = 3 * E(net_Fin)$weight
-#   )
-# 
-# 
-#   stock_sectors_index <- stock_sectors_index_res
-# 
+   
 }
 
 
@@ -253,4 +171,5 @@ legend("bottomleft", inset=0.01, legend=names, col=c(1:4),pch=15:18,
 
 
 dev.off()
+
 

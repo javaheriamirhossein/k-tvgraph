@@ -7,7 +7,7 @@ build:
 	Rscript .roxygenize.R
 
 install:
-	R CMD INSTALL ../ktvgraph
+	R CMD INSTALL ../tvgraph
 
 test:
 	Rscript -e "devtools::test()"

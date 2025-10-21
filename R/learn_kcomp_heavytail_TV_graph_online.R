@@ -1,6 +1,3 @@
-library(spectralGraphTopology)
-library(assertthat)
-
 #' @title Semi-online inference of a time-varying k-component graph from heavy-tailed data
 #'
 #' Computes the Theta matrix of a time-varying graph given the data matrix in a single time frame.
@@ -37,8 +34,6 @@ library(assertthat)
 #' \item{\code{dual_residual}}{dual residual per iteration}
 #' \item{\code{lagrangian}}{Lagrangian value per iteration}
 #' \item{\code{elapsed_time}}{Time taken to reach convergence}
-#' @import spectralGraphTopology
-#' @import assertthat
 #' @export
 learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
                                                   sigma_e = exp(1),
@@ -58,26 +53,26 @@ learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
                                                   reltol = 1e-5,
                                                   verbose = TRUE,
                                                   record_objective = FALSE) {
-  
-  
+
+
   X <- scale(as.matrix(X))
-  
+
   # number of nodes
   p <- ncol(X)
-  
+
 
   # number of observations
   T_n <- nrow(X)
 
-  
+
   alpha <- 2/(T_n*sigma_e)
   beta <- 2*log(sigma_e)/T_n
-  
-  
+
+
   LstarSq <- vector(mode = "list", length = T_n)
   for (i in 1:T_n)
-    LstarSq[[i]] <- Lstar(X[i, ] %*% t(X[i, ])) 
-  
+    LstarSq[[i]] <- Lstar(X[i, ] %*% t(X[i, ]))
+
   # w-initialization
   if (assertthat::is.string(w0)) {
     w <- spectralGraphTopology:::w_init(w0, MASS::ginv(cor(X)))
@@ -91,32 +86,32 @@ learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
   Lw <- L(w)
   Aw <- A(w)
   U <- eigen(Lw, symmetric = TRUE)$vectors[, (p - k + 1):p]
-  
-  if (!is.null(a0)){ 
+
+  if (!is.null(a0)){
     a <- rep(a0, p*(p-1)/2)
   } else {
     a <-  rep(1, p*(p-1)/2)
   }
-  
-  if (length(w_lagged)==1){ 
+
+  if (length(w_lagged)==1){
     w_lagged <-  rep(w_lagged, p*(p-1)/2)
   }
-  
+
   # Theta-initilization
   Theta <- Lw
   Phi <- matrix(0, p, p)
-  
-  
+
+
   # u-initilization
   u <- w - a*w_lagged
   mu_vec <- rep(0, p*(p-1)/2)
-  
+
   # degree dual initilization
   z <- rep(0, p)
-  
-  
 
-  
+
+
+
   # ADMM constants
   mu <- 2
   tau <- 2
@@ -133,7 +128,7 @@ learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
   elapsed_time <- c()
   start_time <- proc.time()[3]
   for (i in 1:maxiter) {
-    
+
 
     for (j in 1:1){
       # update w
@@ -155,17 +150,17 @@ learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
       wi[wi< thr] <- 0
       Lwi <- L(wi)
       Awi <- A(wi)
-      
-      
+
+
     }
 
     # Update u
     u <- wi - a*w_lagged - mu_vec/rho
     thr <- alpha/(rho)
     u <- softThresh(u, thr)
-    
-    
-    
+
+
+
     # update a
     f_temp <- wi -u - mu_vec/rho
     f_temp[f_temp<0] <- 0
@@ -173,40 +168,40 @@ learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
     thr <- gamma/(rho* w_lagged[idx]^2)
     a[idx] <- softThresh(f_temp[idx]/w_lagged[idx], thr)
     a[!idx] <- 0
-    
-    
+
+
 
     # update U
     U <- eigen(Lwi, symmetric = TRUE)$vectors[, (p - k + 1):p]
-    
+
     # update Theta
     eig <- eigen( Lwi + Phi/rho, symmetric = TRUE)
     V <- eig$vectors[,1:(p-k)]
     Gamma_U <- eig$values[1:(p-k)]
     Thetai <- V %*% diag((Gamma_U + sqrt(Gamma_U^2 + 4/rho)) / 2) %*% t(V)
-    
-    
-    
+
+
+
     # update Phi
-    R1 <-  Lwi - Thetai 
+    R1 <-  Lwi - Thetai
     Phi <- Phi + rho * R1
-    
-    
-    
+
+
+
     # update mu
-    R0 <- u - wi + a*w_lagged 
+    R0 <- u - wi + a*w_lagged
     mu_vec <- mu_vec + rho * R0
-    
+
     # update z
     R2 <- diag(Lwi) - d
     z <- z + rho * R2
-    
+
 
     # compute primal, dual residuals, & lagrangian
     primal_lap_residual <- c(primal_lap_residual, norm(R1, "F"))
     dual_residual <- c(dual_residual, rho*norm(Lstar(Theta - Thetai), "2"))
     lagrangian <- c(lagrangian, compute_augmented_lagrangian_kcomp_mine(wi, LstarSq, Thetai, U, Phi, z, d, heavy_type, T_n, p, k, rho, eta, nu, w_lagged, u, mu_vec, alpha, beta, a, gamma))
-    
+
     # update rho
     if (update_rho) {
       # s <- rho * norm(Lstar(Theta - Thetai), "2")
@@ -245,7 +240,7 @@ learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
     }
     if (verbose)
       pb$tick()
-    
+
     elapsed_time <- c(elapsed_time, proc.time()[3] - start_time)
     has_converged <- (norm(Lwi - Lw, 'F') / norm(Lw, 'F') < reltol) && (i > 1)
     # if (has_converged)
@@ -253,7 +248,7 @@ learn_kcomp_heavytail_TV_graph_online <- function(X, w_lagged = 0,
     w <- wi
     Lw <- Lwi
     Aw <- Awi
-    
+
     Theta <- Thetai
   }
   results <- list(laplacian = L(wi), adjacency = A(wi), weights = wi, theta = Thetai, maxiter = i,
@@ -291,7 +286,7 @@ compute_augmented_lagrangian_kcomp_mine <- function(w, LstarSq, Theta, U, Phi, z
          + gamma *sum(a)
          + sum(z * (Dw - d)) + 0.5 * rho * (norm(Dw - d, "2")^2
          + sum(mu_vec * ( u - w + a*w_lagged )) + .5 * rho * (norm(u - w + a*w_lagged, "2"))^2
-         + sum(Phi * (Lw - Theta))  + 0.5* rho * norm(Lw - Theta, "F")^2)    
+         + sum(Phi * (Lw - Theta))  + 0.5* rho * norm(Lw - Theta, "F")^2)
   )
 }
 
@@ -305,5 +300,5 @@ softThresh <- function(v, thr){
   temp <- abs(v) - thr
   temp <- temp * (temp>0)
   return( sign(v) * temp )
-  
+
 }

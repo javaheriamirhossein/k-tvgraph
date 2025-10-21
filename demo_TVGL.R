@@ -7,7 +7,7 @@ library(spectralGraphTopology)
 library(combinat)
 library(ggplot2)
 library(reshape2)
-library(ktvgraph)
+library(tvgraph)
 
 
 set.seed(42)
@@ -132,7 +132,7 @@ for (i in 1:Nwin){
   balanced_norm_vec[i] <- metric$balanced_norm
   GINI_vec[i] <- metric$GINI
   ARI_vec[i] <- metric$ARI
-  rank_mat[i] <- rankMatrix(graphs_list[[i]]$laplacian)[1]
+  rank_mat[i] <- Matrix::rankMatrix(graphs_list[[i]]$laplacian)[1]
 
 }
 
@@ -145,7 +145,7 @@ for (j in 1:Nwin) {
 
   net_result <- plot_graph(graphs_list[[j]]$laplacian, stock_sectors_index, colnames(stock_prices))
   metric <- net_result$metric
-   
+
 }
 
 

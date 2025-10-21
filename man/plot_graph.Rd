@@ -14,38 +14,6 @@ plot_graph(Laplacian, true_labels, names)
 \item{true_labels}{the numeric vector of true labels (of length r)}
 
 \item{names}{the vector of names of the elements, e.g., stocks (of length r)}
-
-\item{heavy_type}{a string which selects the statistical distribution of the data    .
-Valid values are "gaussian" or "student".}
-
-\item{nu}{the degrees of freedom of the Student-t distribution.
-Must be a real number greater than 2.}
-
-\item{sigma_e}{hyperparameter that controls graph weight sparsity and time-consistency}
-
-\item{gamma}{hyperparameter that controls the sparsity of VAR coefficients in the variations of the weights}
-
-\item{w0}{initial vector of graph weights. Either a vector of length p(p-1)/2 or
-a string indicating the method to compute an initial value.}
-
-\item{a0}{initial value of the VAR coefficient}
-
-\item{eta}{hyperparameter that controls the effect of the additional regularization to obtain a
-k-component graph}
-
-\item{update_eta}{whether to update eta during the optimization.}
-
-\item{d}{the nodes' degrees. Either a vector or a single value.}
-
-\item{rho}{ADMM hyperparameter.}
-
-\item{update_rho}{whether or not to update rho during the optimization.}
-
-\item{maxiter}{maximum number of iterations.}
-
-\item{reltol}{relative tolerance as a convergence criteria.}
-
-\item{verbose}{whether or not to show a progress bar during the iterations.}
 }
 \value{
 The network object:

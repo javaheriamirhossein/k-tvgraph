@@ -66,7 +66,6 @@ stock_sectors_index <- as.numeric(as.factor(stock_sectors))
 
 #----------------------------
 ## Online TV graph learning (proposed)
-forget_fac <- 0.1
 data_frame <- log_returns[1:winLen,]
 S_cov <- cor(scale(data_frame))
 w <- spectralGraphTopology:::w_init('naive', MASS::ginv(S_cov))
@@ -97,9 +96,9 @@ for (i in 1:Nwin){
   nu <- fit_mvt(data_frame, nu = "MLE-diag-resampled")$nu
   graphs_list[[i]] <- learn_kcomp_heavytail_TV_graph_online(scale(data_frame), k = q, heavy_type = "student",
                                                      nu = nu,
-                                                     sigma_e = exp(3),
+                                                     sigma_e = exp(0.1),
                                                      w_lagged = w_lagged,
-                                                     rho = 1,
+                                                     rho = 3,
                                                      d = 1,
                                                      w0 = w0,
                                                      update_eta = TRUE,
@@ -137,17 +136,21 @@ for (i in 1:Nwin){
 }
 
 
-adjacency <- graphs_list[[Nwin]]$adjacency
 
 
+Coords <- NULL
+Ngraph <- length(graphs_list)
 
-for (j in 1:Nwin) {
 
-  net_result <- plot_graph(graphs_list[[j]]$laplacian, stock_sectors_index, colnames(stock_prices))
-  metric <- net_result$metric
-
+implied_clusters <- TRUE
+for (i in 1:Ngraph){
+  id <- Ngraph - i + 1
+  gplt <- plot_graph(graphs_list[[id]]$laplacian, stock_sectors_index, colnames(stock_prices), Coords = Coords, 
+                                 implied_clusters = implied_clusters )
+  
+  title(main =  paste("frame",id) )
+  Coords <- gplt$Coords
 }
-
 
 # print the final values of the clustering measures
 cat("ACC: ", metric$accuracy_adj, "\n")

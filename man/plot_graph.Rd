@@ -6,19 +6,31 @@
 
 Plots a clustering graph based on a given Laplacian matrix and the ground-truth labels for the clusters.}
 \usage{
-plot_graph(Laplacian, true_labels, names)
+plot_graph(
+  Laplacian,
+  true_labels,
+  node_names = NULL,
+  implied_clusters = FALSE,
+  verbose = FALSE,
+  Coords = NULL
+)
 }
 \arguments{
-\item{Laplacian}{r by r Laplacian matrix.}
+\item{Laplacian}{p by p Laplacian matrix.}
 
-\item{true_labels}{the numeric vector of true labels (of length r)}
+\item{true_labels}{the numeric vector of true labels (of length p)}
 
-\item{names}{the vector of names of the elements, e.g., stocks (of length r)}
+\item{node_names}{the vector of names of the nodes, e.g., stocks (of length p)}
+
+\item{implied_clusters}{whether to color the nodes based on implied clusters or not}
+
+\item{Coords}{input graph node coordinates}
 }
 \value{
 The network object:
 \item{\code{graph_net}}{the graph network object that can be used for plotting}
 \item{\code{metric}}{the results of the clustering measures}
+\item{\code{Coords}}{output graph node coordinates}
 }
 \description{
 Plot a clustering graph from Laplacian matrix

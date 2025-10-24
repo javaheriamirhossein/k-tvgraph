@@ -5,8 +5,6 @@ library(igraph)
 library(readr)
 library(spectralGraphTopology)
 library(combinat)
-library(ggplot2)
-library(reshape2)
 library(tvgraph)
 
 
@@ -17,17 +15,19 @@ pdf(file = "Plots_TVGL_results.pdf")
 
 
 # number of stocks
-r <- 100
+p <- 100
 
-# number of sectors
+# number of sectors (clusters)
 q <- 8
 
 
 # load SP500 stock prices_test into an xts table
 stock_prices_orig <- readRDS("examples/stocks/sp500-data-2016-2020.rds")
-stock_prices <- stock_prices_orig[1:1001,1:r]
+stock_prices <- stock_prices_orig[1:1001,1:p]
 
+# frame (window) length
 winLen <-  200
+
 Nday <- nrow(stock_prices)
 
 Nwin <- Nday%/% winLen
@@ -37,7 +37,7 @@ Nwin <- Nday%/% winLen
 
 
 # total nodes in the graph
-colnames(stock_prices)[1:r]
+colnames(stock_prices)[1:p]
 #>   [1] "A"    "AAL"  "ABBV" "ABC"  "ABMD" "ABT"  "ADM"  "AEE"  "AEP"  "AES"
 #>  [11] "AFL"  "AIG"  "AIV"  "AIZ"  "AJG"  "ALB"  "ALGN" "ALK"  "ALL"  "ALLE"
 #>  [21] "ALXN" "AMCR" "AME"  "AMGN" "AMP"  "AMT"  "ANTM" "AON"  "AOS"  "APA"
@@ -57,9 +57,9 @@ log_returns <- diff(log(stock_prices), na.pad = FALSE)
 
 
 
-# # build network
+# build network
 SP500 <- read_csv("examples/stocks/SP500-sectors.csv")
-stock_sectors <- SP500$GICS.Sector[SP500$Symbol %in% colnames(stock_prices)[1:r]]
+stock_sectors <- SP500$GICS.Sector[SP500$Symbol %in% colnames(stock_prices)[1:p]]
 stock_sectors_index <- as.numeric(as.factor(stock_sectors))
 
 
@@ -117,11 +117,11 @@ for (i in 1:Nwin){
 
 
 
-  net_Fin <- graph_from_adjacency_matrix(graphs_list[[i]]$adjacency, mode = "undirected", weighted = TRUE)
+  graph_net <- graph_from_adjacency_matrix(graphs_list[[i]]$adjacency, mode = "undirected", weighted = TRUE)
 
 
   # where do predictions differ from GICS?
-  metric <- evaluate_clustering(net_Fin, stock_sectors_index, r, q)
+  metric <- evaluate_clustering(graph_net, stock_sectors_index, p, q)
 
 
 

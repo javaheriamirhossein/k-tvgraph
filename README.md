@@ -24,7 +24,7 @@ library(readr)
 library(spectralGraphTopology)
 library(combinat)
 
-% import the time-varying graph learning package
+# import the time-varying graph learning package
 library(tvgraph)
 
 

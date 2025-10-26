@@ -158,7 +158,7 @@ metrics[,2] <- purity_vec
 metrics[,3] <- modularity_vec
 metrics[,4] <- ARI_vec
 
-matplot(metrics, type = "b",pch=2,col = 1:4, ylab = "Metrics", xlab = "Frame")
+matplot(metrics, type = "b",pch=15:18, col = 1:4, ylab = "Metrics", xlab = "Frame")
 names <- c("Accuracy", "Purity", "Modularity", "ARI")
 legend("bottomleft", inset=0.01, legend=names, col=c(1:4),pch=15:18,
        bg= ("white"), horiz=F)

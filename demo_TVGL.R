@@ -57,7 +57,7 @@ log_returns <- diff(log(stock_prices), na.pad = FALSE)
 
 
 
-# build network
+# Load true labels
 SP500 <- read_csv("examples/stocks/SP500-sectors.csv")
 stock_sectors <- SP500$GICS.Sector[SP500$Symbol %in% colnames(stock_prices)[1:p]]
 stock_sectors_index <- as.numeric(as.factor(stock_sectors))
@@ -82,10 +82,10 @@ w_lagged <- 0
 graphs_list <- vector("list", Nwin)
 
 
-accuracy_adj_vec <- rep(0,Nwin)
+accuracy_vec <- rep(0,Nwin)
 purity_vec <- rep(0,Nwin)
-mod_gt_vec <- rep(0,Nwin)
-balanced_norm_vec <- rep(0,Nwin)
+modularity_vec <- rep(0,Nwin)
+balanced_vec <- rep(0,Nwin)
 ARI_vec <- rep(0,Nwin)
 GINI_vec <- rep(0,Nwin)
 rank_mat <- rep(0,Nwin)
@@ -125,10 +125,10 @@ for (i in 1:Nwin){
 
 
 
-  accuracy_adj_vec[i] <- metric$accuracy_adj
+  accuracy_vec[i] <- metric$accuracy
   purity_vec[i] <- metric$purity
-  mod_gt_vec[i] <- metric$mod_gt
-  balanced_norm_vec[i] <- metric$balanced_norm
+  modularity_vec[i] <- metric$mod
+  balanced_vec[i] <- metric$balanced
   GINI_vec[i] <- metric$GINI
   ARI_vec[i] <- metric$ARI
   rank_mat[i] <- Matrix::rankMatrix(graphs_list[[i]]$laplacian)[1]
@@ -145,7 +145,7 @@ Ngraph <- length(graphs_list)
 implied_clusters <- TRUE
 for (i in 1:Ngraph){
   id <- Ngraph - i + 1
-  gplt <- plot_graph(graphs_list[[id]]$laplacian, stock_sectors_index, colnames(stock_prices), Coords = Coords, 
+  gplt <- plot_graph(graphs_list[[id]]$adjacency, stock_sectors_index, colnames(stock_prices), Coords = Coords, 
                                  implied_clusters = implied_clusters )
   
   title(main =  paste("frame",id) )
@@ -153,17 +153,17 @@ for (i in 1:Ngraph){
 }
 
 # print the final values of the clustering measures
-cat("ACC: ", metric$accuracy_adj, "\n")
+cat("ACC: ", metric$accuracy, "\n")
 cat("PUR: ", metric$purity, "\n")
-cat("MOD: ", metric$mod_gt, "\n")
+cat("MOD: ", metric$mod, "\n")
 cat("ARI: ", metric$ARI, "\n")
 
 
 # Plot the clustering measures vs frames number
 metrics <- matrix(rep(0,4*Nwin), Nwin, 4)
-metrics[,1] <- accuracy_adj_vec
+metrics[,1] <- accuracy_vec
 metrics[,2] <- purity_vec
-metrics[,3] <- mod_gt_vec
+metrics[,3] <- modularity_vec
 metrics[,4] <- ARI_vec
 
 matplot(metrics, type = "b",pch=2,col = 1:4, ylab = "Metrics", xlab = "Frame")

@@ -2,12 +2,12 @@
 % Please edit documentation in R/plot_graph.R
 \name{plot_graph}
 \alias{plot_graph}
-\title{Plot a clustering graph from Laplacian matrix
+\title{Plot a clustering graph from adjacency matrix
 
-Plots a clustering graph based on a given Laplacian matrix and the ground-truth labels for the clusters.}
+Plots a clustering graph based on a given adjacency matrix and the ground-truth labels for the clusters.}
 \usage{
 plot_graph(
-  Laplacian,
+  adjacency,
   true_labels,
   node_names = NULL,
   implied_clusters = FALSE,
@@ -16,7 +16,7 @@ plot_graph(
 )
 }
 \arguments{
-\item{Laplacian}{p by p Laplacian matrix.}
+\item{adjacency}{p by p adjacency matrix.}
 
 \item{true_labels}{the numeric vector of true labels (of length p)}
 
@@ -33,7 +33,7 @@ The network object:
 \item{\code{Coords}}{output graph node coordinates}
 }
 \description{
-Plot a clustering graph from Laplacian matrix
+Plot a clustering graph from adjacency matrix
 
-Plots a clustering graph based on a given Laplacian matrix and the ground-truth labels for the clusters.
+Plots a clustering graph based on a given adjacency matrix and the ground-truth labels for the clusters.
 }

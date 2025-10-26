@@ -6,10 +6,10 @@
 
 Clustering evaluation using multiple metrics}
 \usage{
-evaluate_clustering(netobj, true_labels, p, q)
+evaluate_clustering(net, true_labels, p, q)
 }
 \arguments{
-\item{netobj}{graph network object}
+\item{net}{graph network object}
 
 \item{true_labels}{True cluster labels (optional)}
 

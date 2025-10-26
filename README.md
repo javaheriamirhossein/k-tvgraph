@@ -174,10 +174,10 @@ legend("bottomleft", inset=0.01, legend=names, col=c(1:4),pch=15:18,
 ## Citation
 Please cite:
 
--   [A Javaheri](https://javaheriamirhossein.github.io/), [J Ying](https://jxying.github.io/),
-    [DP Palomar](https://www.danielppalomar.com) and Farokh Matvasti
-    [Time-Varying Graph Learning for Data with Heavy-Tailed Distribution](https://arxiv.org/abs/2501.00606),
-    IEEE Transactions on Signal Processing, 2025.
+-   [A. Javaheri](https://javaheriamirhossein.github.io/), [J. Ying](https://jxying.github.io/),
+    [D. P. Palomar](https://www.danielppalomar.com) and F. Matvasti,
+    ["Time-Varying Graph Learning for Data with Heavy-Tailed Distribution,"](https://palomar.home.ece.ust.hk/papers/2025/JavaheriYingPalomarMarvasti-TSP2025.pdf),
+    in IEEE Transactions on Signal Processing, vol. 73, pp. 3044-3060, 2025, doi: 10.1109/TSP.2025.3588173.
 
 
 

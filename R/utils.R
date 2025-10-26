@@ -79,17 +79,18 @@ GINI <- function(netobj) {
 #'
 #' Clustering evaluation using multiple metrics
 #'
-#' @param netobj graph network object 
+#' @param net graph network object 
 #' @param true_labels True cluster labels (optional)
 #' @param p number of assets (nodes)
 #' @param q number of clusters
 #' @return Evaluation metrics
 #' @export
 #' 
-evaluate_clustering <- function(netobj, true_labels, p, q) {
+evaluate_clustering <- function(net, true_labels, p, q) {
   labels_pred <- rep(0, p)
+  memberships <- igraph::components(net)$membership
   for (j in 1:q){
-    idx <- igraph::components(netobj)$membership %in% c(j)
+    idx <- memberships %in% c(j)
     labels_pred[idx] <- Mode(true_labels[idx])
   }
   
@@ -97,22 +98,18 @@ evaluate_clustering <- function(netobj, true_labels, p, q) {
   purity <- 1- sum(mask)/length(mask)
   
   
-  labels_pred = igraph::components(netobj)$membership
-  mask <- labels_pred != true_labels
-  accuracy_metric <- 1- sum(mask)/length(mask)
-  
-  
-  labels_pred_adj <- labels_pred 
+  labels_pred <- memberships
+  labels_pred_sorted <- labels_pred 
   perms <- permn(c(1:q))
   acc_max <- 0
   for (k in 1:length(perms)){
     perm <- perms[[k]]
     for (j in 1:q){
-      idx <- labels_pred %in% j
-      labels_pred_adj[idx] <- perm[j]
+      idx <- memberships %in% j
+      labels_pred_sorted[idx] <- perm[j]
       
     }
-    mask <- labels_pred_adj != true_labels
+    mask <- labels_pred_sorted != true_labels
     acc <- 1- sum(mask)/length(mask)
     if (acc>= acc_max) {
       acc_max <- acc
@@ -122,33 +119,30 @@ evaluate_clustering <- function(netobj, true_labels, p, q) {
   perm <- perms[[ind_max]]
   for (j in 1:q){
     idx <- labels_pred %in% j
-    labels_pred_adj[idx] <- perm[j]
+    labels_pred_sorted[idx] <- perm[j]
   }
   
-  NMI_val <- randnet::NMI(labels_pred_adj, true_labels)
+  NMI <- randnet::NMI(labels_pred_sorted, true_labels)
   
-  ARI <- mclust::adjustedRandIndex(labels_pred_adj, true_labels)
-  mask <- labels_pred_adj != true_labels
-  accuracy_adj_metric <- 1- sum(mask)/length(mask)
+  ARI <- mclust::adjustedRandIndex(labels_pred_sorted, true_labels)
+  mask <- labels_pred_sorted != true_labels
+  accuracy <- 1- sum(mask)/length(mask)
   
   
   
-  mod_metric <- modularity(cluster_walktrap(netobj))
-  mod_g_metric <- modularity(netobj, membership(cluster_walktrap(netobj)))
-  mod_gt_metric <- modularity(netobj, true_labels)
   
-  balanced_metric <- Balancedness(netobj, p, q)
-  balanced_norm_metric <- Balancedness_norm(netobj, p, q)
-  GINI_metric <- GINI(netobj)
+  mod_gt <- modularity(net, true_labels)
   
-  metrics <- list( labels_pred = labels_pred,  labels_pred_adj = labels_pred_adj , accuracy = accuracy_metric, 
-                   accuracy_adj = accuracy_adj_metric, purity = purity, 
-                   mod_g = mod_g_metric, mod_gt = mod_gt_metric, balanced = balanced_metric, 
-                   balanced_norm = balanced_norm_metric, GINI = GINI_metric,
-                   NMI = NMI_val, ARI = ARI)
+  balanced_norm <- Balancedness_norm(net, p, q)
+  GINI_metric <- GINI(net)
+  
+  metrics <- list( memberships = memberships,  labels_pred = labels_pred_sorted,  
+                   accuracy = accuracy, purity = purity, 
+                   mod = mod_gt,
+                   balanced = balanced_norm, GINI = GINI_metric,
+                   NMI = NMI, ARI = ARI)
   return( metrics )
 }
-
 
 
 # 

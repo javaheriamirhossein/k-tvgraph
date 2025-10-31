@@ -169,7 +169,8 @@ legend("bottomleft", inset=0.01, legend=names, col=c(1:4),pch=15:18,
 
 
 
-
+## Other versions
+The MATLAB version of this repository is also available as [k-tvgraph-MATLAB](https://github.com/javaheriamirhossein/k-tvgraph-MATLAB).
 
 ## Citation
 Please cite:

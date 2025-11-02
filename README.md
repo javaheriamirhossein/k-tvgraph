@@ -12,6 +12,10 @@ with Student-t distribution applied to financial data clustering.
 On MS Windows environments, make sure to install the most recent version of ``Rtools``.
 
 
+## Other versions
+The MATLAB version of this repository is also available as [k-tvgraph-MATLAB](https://github.com/javaheriamirhossein/k-tvgraph-MATLAB).
+
+
 ## Usage
 Clone this repository to your local computer. Then run `demo_TVGL.R` or run the following code:
 
@@ -168,9 +172,6 @@ legend("bottomleft", inset=0.01, legend=names, col=c(1:4),pch=15:18,
 <img src="figures/metrics.png" width="75%" style="display: block; margin: auto;" />
 
 
-
-## Other versions
-The MATLAB version of this repository is also available as [k-tvgraph-MATLAB](https://github.com/javaheriamirhossein/k-tvgraph-MATLAB).
 
 ## Citation
 Please cite:
